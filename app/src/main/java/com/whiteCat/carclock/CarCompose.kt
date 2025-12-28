@@ -1,6 +1,5 @@
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -10,71 +9,143 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.whiteCat.carclock.SegmentPosition
-import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+
+// --- DATA STRUCTURES AND HELPERS (Place at top of file) ---
+
+private operator fun Float.times(offset: Offset) = offset * this
+
+/**
+ * Calculates a point on a cubic Bézier curve.
+ *
+ * This function uses the cubic Bézier formula to determine the coordinates of a point
+ * on the curve at a specific progression `t`. The curve is defined by four points:
+ * a start point (p0), two control points (p1 and p2), and an end point (p3).
+ *
+ * The formula is: B(t) = (1-t)³P₀ + 3(1-t)²tP₁ + 3(1-t)t²P₂ + t³P₃
+ *
+ * @param rotationValue The progression along the curve, a value between 0.0f (start) and 1.0f (end).
+ * @param startPoint The starting point of the curve.
+ * @param cp1 The first control point, which influences the curve's direction from the start.
+ * @param cp2 The second control point, which influences the curve's direction towards the end.
+ * @param endpoint The ending point of the curve.
+ * @return An [Offset] representing the calculated point on the curve for the given `t`.
+ */
+fun getBezierPoint(rotationValue: Float, startPoint: Offset, cp1: Offset, cp2: Offset, endpoint: Offset): Offset {
+    val u = 1 - rotationValue
+    val tt = rotationValue * rotationValue
+    val uu = u * u
+    val uuu = uu * u
+    val ttt = tt * rotationValue
+    return uuu * startPoint + 3 * uu * rotationValue * cp1 + 3 * u * tt * cp2 + ttt * endpoint
+}
+
+/**
+ * Calculates the tangent vector of a cubic Bezier curve at a given time `t`.
+ * The tangent vector indicates the direction of the curve at that point.
+ * This is the derivative of the Bezier curve equation.
+ *
+ * @param rotationValue The time parameter along the curve, from 0.0 to 1.0.
+ * @param startPoint The start point of the curve.
+ * @param cp1 The first control point.
+ * @param cp2 The second control point.
+ * @param endPoint The end point of the curve.
+ * @return The tangent vector as an [Offset], representing the direction and speed at point `t`.
+ */
+fun getBezierTangent(rotationValue: Float, startPoint: Offset, cp1: Offset, cp2: Offset, endPoint: Offset): Offset {
+    val u = 1 - rotationValue
+    // The derivative of the Bézier curve formula
+    return 3f * u * u * (cp1 - startPoint) + 6f * u * rotationValue * (cp2 - cp1) + 3f * rotationValue * rotationValue * (endPoint - cp2)
+}
+
+// Data class to hold position, rotation, and a stable control point
+private data class SegmentDetails(val position: Offset, val controlPoint: Offset)
+
 
 @Composable
 fun Car(carIndex: Int, target: SegmentPosition) {
-    val gridSize = 50
+    val gridSize = 50f
+    val controlPointDistance = 100f // Controls the "roundness" of all curves
 
-    val initialGarage =  when (carIndex) {
-        0, 1 -> SegmentPosition.GarageTopLeft
-        2 -> SegmentPosition.GarageTopRight
-        3 -> if (java.util.Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopRight
-        4 -> SegmentPosition.GarageBottomLeft
-        5, 6 -> SegmentPosition.GarageBottomRight
-        else -> SegmentPosition.GarageBottomRight // Default fallback
+    // Create a stable map of segment details, including their canonical control points
+    val segmentDetailsMap = remember {
+        SegmentPosition.values().associateWith { segment ->
+            val position = Offset(segment.x * gridSize, segment.y * gridSize)
+            val angleRad = Math.toRadians(segment.rotation.toDouble()).toFloat()
+            val controlPoint = Offset(
+                x = position.x + controlPointDistance * cos(angleRad),
+                y = position.y + controlPointDistance * sin(angleRad)
+            )
+            SegmentDetails(position, controlPoint)
+        }
     }
 
-    val animatedX = remember { Animatable((initialGarage.x * gridSize).toFloat()) }
-    val animatedY = remember { Animatable((initialGarage.y * gridSize).toFloat()) }
-    val animatedRotation = remember { Animatable(initialGarage.rotation) }
+    var previousTarget by remember { mutableStateOf(target) }
+    val progress = remember { Animatable(1f) }
+    var currentPos by remember { mutableStateOf(segmentDetailsMap.getValue(target).position) }
+    var currentRotation by remember { mutableStateOf(target.rotation) }
 
     LaunchedEffect(target) {
-        val targetX = (target.x * gridSize).toFloat()
-        val targetY = (target.y * gridSize).toFloat()
+        val startDetails = segmentDetailsMap.getValue(previousTarget)
+        val endDetails = segmentDetailsMap.getValue(target)
 
-        val currentX = animatedX.value
-        val currentY = animatedY.value
+        val startPosition = startDetails.position
+        val endPosition = endDetails.position
 
-        val xTravelDuration = (abs(targetX - currentX) / gridSize * 300).toLong().coerceIn(200, 800)
-        val yTravelDuration = (abs(targetY - currentY) / gridSize * 300).toLong().coerceIn(200, 800)
-
-        // Move horizontally
-        if (abs(currentX - targetX) > 0.1f) {
-            val rotation = if (targetX > currentX) 0f else 180f
-            // Rotate first
-            animatedRotation.animateTo(rotation, tween(durationMillis = 200, easing = LinearEasing))
-            // Then move
-            animatedX.animateTo(targetX, tween(durationMillis = xTravelDuration.toInt(), easing = FastOutSlowInEasing))
+        // Don't animate if the position hasn't changed
+        if ((startPosition - endPosition).getDistanceSquared() < 0.1f) {
+            // Animate only the rotation if needed (e.g., car turning in place)
+            val rotationAnim = Animatable(currentRotation)
+            rotationAnim.animateTo(target.rotation, tween(300))
+            currentRotation = rotationAnim.value
+            previousTarget = target
+            return@LaunchedEffect
         }
 
-        // Move vertically
-        if (abs(currentY - targetY) > 0.1f) {
-            val rotation = if (targetY > currentY) 90f else -90f
-            // Rotate first
-            animatedRotation.animateTo(rotation, tween(durationMillis = 200, easing = LinearEasing))
-            // Then move
-            animatedY.animateTo(targetY, tween(durationMillis = yTravelDuration.toInt(), easing = FastOutSlowInEasing))
+        // cp1 is the control point associated with the START position
+        // cp2 is the control point associated with the END position
+        val controlPoint1 = startDetails.controlPoint
+        val controlPoint2 = endDetails.controlPoint
+
+        progress.snapTo(0f)
+
+        progress.animateTo(1f, tween(durationMillis = 1000, easing = FastOutSlowInEasing)) {
+            // 'value' is the animation progress 't' from 0f to 1f
+            currentPos = getBezierPoint(value, startPosition, controlPoint1, controlPoint2, endPosition)
+            val tangent = getBezierTangent(value, startPosition, controlPoint1, controlPoint2, endPosition)
+            if (tangent.getDistanceSquared() > 0) {
+                currentRotation = Math.toDegrees(atan2(tangent.y, tangent.x).toDouble()).toFloat()
+            }
         }
 
-        // Final rotation at destination
-        animatedRotation.animateTo(target.rotation, tween(durationMillis = 200))
+        // Snap to final values for perfect alignment
+        currentPos = endPosition
+        currentRotation = target.rotation
+        previousTarget = target
     }
 
-
-    // the car
+    // The rest of the Car UI remains the same
     Box(
         modifier = Modifier
-            .offset(x = animatedX.value.dp + 10.dp, y = animatedY.value.dp + 10.dp) // +10 for margin
-            .rotate(animatedRotation.value)
-            .size(width = 75.dp, height = 30.dp) // car size
+            .offset(
+                x = currentPos.x.dp + 10.dp, // +10 for margin
+                y = currentPos.y.dp + 10.dp
+            )
+            .rotate(currentRotation)
+            .size(width = 75.dp, height = 30.dp)
             .background(Color.Red, RoundedCornerShape(4.dp)),
         contentAlignment = Alignment.Center
     ) {
