@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -30,7 +31,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CarClockTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    var currentDigit by remember { mutableStateOf(6) }
+                    var currentDigit by remember { mutableIntStateOf(8) }
                     Column(
                         modifier = Modifier.fillMaxSize().padding(innerPadding),
                         verticalArrangement = Arrangement.Center,
@@ -41,9 +42,9 @@ class MainActivity : ComponentActivity() {
                         Spacer(modifier = Modifier.height(30.dp))
 
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { if (currentDigit > 0) currentDigit-- }) { Text("-") }
+                            Button(onClick = { if (currentDigit > 0) currentDigit-- else currentDigit = 9}) { Text("-") }
                             Text(text = "$currentDigit", modifier = Modifier.padding(16.dp))
-                            Button(onClick = { if (currentDigit < 9) currentDigit++ }) { Text("+") }
+                            Button(onClick = { if (currentDigit < 9) currentDigit++ else currentDigit = 0}) { Text("+") }
                         }
                     }
                 }
