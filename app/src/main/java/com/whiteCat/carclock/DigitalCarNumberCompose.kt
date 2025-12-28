@@ -34,8 +34,11 @@ enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
     BottomLeft(0, 3, 90f),
     BottomRight(2, 3, 90f),
     Bottom(1, 4, 0f),
-    // garage position to store extra pieces
-    Garage(-5, -5, 45f)
+    // garage positions
+    GarageTopLeft(-2, -3, 45f),
+    GarageTopRight(4, -3, 45f),
+    GarageBottomLeft(-2, 6, 45f),
+    GarageBottomRight(4, 6, 45f)
 }
 
 
@@ -59,7 +62,20 @@ val digitMap = mapOf(
 
 @Composable
 fun DigitalCarNumber(number: Int) {
-    var carAssignments by remember { mutableStateOf(List(7) { SegmentPosition.Garage }) }
+    var carAssignments by remember {
+        mutableStateOf(
+            List(7) { i ->
+                when (i) {
+                    0, 1 -> SegmentPosition.GarageTopLeft
+                    2 -> SegmentPosition.GarageTopRight
+                    3 -> if (java.util.Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopRight
+                    4 -> SegmentPosition.GarageBottomLeft
+                    5, 6 -> SegmentPosition.GarageBottomRight
+                    else -> SegmentPosition.GarageBottomRight // Default fallback
+                }
+            }
+        )
+    }
 
     // re-assign the cars when the number changes
     LaunchedEffect(number) {
@@ -76,18 +92,27 @@ fun DigitalCarNumber(number: Int) {
         for (i in 0 until 7) {
             // finding target based on logic
             val targetPosition = carAssignments[i]
-            Car(target = targetPosition)
+            Car(carIndex = i, target = targetPosition)
         }
     }
 }
 
 @Composable
-fun Car(target: SegmentPosition) {
+fun Car(carIndex: Int, target: SegmentPosition) {
     val gridSize = 50
 
-    val animatedX = remember { Animatable((SegmentPosition.Garage.x * gridSize).toFloat()) }
-    val animatedY = remember { Animatable((SegmentPosition.Garage.y * gridSize).toFloat()) }
-    val animatedRotation = remember { Animatable(SegmentPosition.Garage.rotation) }
+    val initialGarage =  when (carIndex) {
+        0, 1 -> SegmentPosition.GarageTopLeft
+        2 -> SegmentPosition.GarageTopRight
+        3 -> if (java.util.Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopRight
+        4 -> SegmentPosition.GarageBottomLeft
+        5, 6 -> SegmentPosition.GarageBottomRight
+        else -> SegmentPosition.GarageBottomRight // Default fallback
+    }
+
+    val animatedX = remember { Animatable((initialGarage.x * gridSize).toFloat()) }
+    val animatedY = remember { Animatable((initialGarage.y * gridSize).toFloat()) }
+    val animatedRotation = remember { Animatable(initialGarage.rotation) }
 
     LaunchedEffect(target) {
         val targetX = (target.x * gridSize).toFloat()
@@ -134,31 +159,32 @@ fun Car(target: SegmentPosition) {
 
 // lazily assigning cars
 fun updateCarAssignments(digit: Int, previousAssignments: List<SegmentPosition>): List<SegmentPosition> {
-    val requiredSegments = digitMap[digit]?.toMutableSet() ?: mutableSetOf()
-    val newAssignments = MutableList<SegmentPosition?>(7) { null }
+    val requiredSegments = digitMap[digit] ?: setOf()
+    // Define preferred segment for each car. This creates a stable mapping.
+    val preferredSegments = listOf(
+        SegmentPosition.Top,
+        SegmentPosition.TopLeft,
+        SegmentPosition.TopRight,
+        SegmentPosition.Middle,
+        SegmentPosition.BottomLeft,
+        SegmentPosition.BottomRight,
+        SegmentPosition.Bottom
+    )
 
-    // Identify cars that can stay in their current position
-    for (i in 0 until 7) {
-        val currentPos = previousAssignments[i]
-        if (currentPos in requiredSegments) {
-            newAssignments[i] = currentPos
-            requiredSegments.remove(currentPos) // Mark this segment as filled
-        }
-    }
-
-    // Assign available cars to the remaining required segments
-    val remainingSegments = requiredSegments.toList()
-    var segmentIndex = 0
-    for (i in 0 until 7) {
-        // If car `i` hasn't been assigned a position yet, it's available
-        if (newAssignments[i] == null) {
-            if (segmentIndex < remainingSegments.size) {
-                // Assign this car to a remaining segment
-                newAssignments[i] = remainingSegments[segmentIndex]
-                segmentIndex++
-            } else {
-                // If no more segments are required, send the car to the garage
-                newAssignments[i] = SegmentPosition.Garage
+    return List(7) { carIndex ->
+        val preferredSegment = preferredSegments[carIndex]
+        if (preferredSegment in requiredSegments) {
+            // If this car's preferred segment is needed for the new digit, assign it there.
+            preferredSegment
+        } else {
+            // Otherwise, send the car to its specific garage based on the new rules.
+            when (carIndex) {
+                0, 1 -> SegmentPosition.GarageTopLeft
+                2 -> SegmentPosition.GarageTopRight
+                3 -> if (java.util.Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopRight
+                4 -> SegmentPosition.GarageBottomLeft
+                5, 6 -> SegmentPosition.GarageBottomRight
+                else -> SegmentPosition.GarageBottomRight // Default fallback
             }
         }
     }
