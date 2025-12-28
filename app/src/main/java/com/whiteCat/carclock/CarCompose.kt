@@ -76,7 +76,7 @@ private data class SegmentDetails(val position: Offset, val controlPoint: Offset
 
 
 @Composable
-fun Car(carIndex: Int, target: SegmentPosition) {
+fun Car(carIndex: Int, target: SegmentPosition, delay: Long = 300) {
     val gridSize = 50f
     val controlPointDistance = 100f // Controls the "roundness" of all curves
 
@@ -122,7 +122,7 @@ fun Car(carIndex: Int, target: SegmentPosition) {
 
         progress.snapTo(0f)
 
-        progress.animateTo(1f, tween(durationMillis = 1000, easing = FastOutSlowInEasing)) {
+        progress.animateTo(1f, tween(durationMillis = 1000, easing = FastOutSlowInEasing, delayMillis = delay.toInt())) {
             // 'value' is the animation progress 't' from 0f to 1f
             currentPos = getBezierPoint(value, startPosition, controlPoint1, controlPoint2, endPosition)
             val tangent = getBezierTangent(value, startPosition, controlPoint1, controlPoint2, endPosition)

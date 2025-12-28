@@ -73,6 +73,8 @@ fun DigitalCarNumber(number: Int) {
 
     // the previous state to calculate the transitions
     val previousAssignments = remember { mutableStateOf(carAssignments) }
+    // holds the calculated delays for each car
+    var carDelays by remember { mutableStateOf(List(7) { 0L }) }
 
     LaunchedEffect(number) {
         // Calculate the final, desired state for the new number
@@ -85,6 +87,19 @@ fun DigitalCarNumber(number: Int) {
             SegmentPosition.GarageBottomRight
         )
 
+        val staggerDelay = 300L // Delay in ms between each car starting
+
+        // Calculate delays for the PARKING phase ---
+        val parkingDelays = MutableList(7) { 0L }
+        var parkingSequence = 0
+        for (i in 0 until 7) {
+            val isGoingToGarage = finalAssignments[i] in garagePositions && previousAssignments.value[i] !in garagePositions
+            if (isGoingToGarage) {
+                parkingDelays[i] = parkingSequence * staggerDelay
+                parkingSequence++
+            }
+        }
+
         // Create the intermediate state: only move cars TO the garage
         val parkingAssignments = List(7) { i ->
             val isGoingToGarage = finalAssignments[i] in garagePositions && previousAssignments.value[i] !in garagePositions
@@ -95,11 +110,28 @@ fun DigitalCarNumber(number: Int) {
             }
         }
 
+        // Apply the parking phase delays
+        carDelays = parkingDelays
         // Apply the first phase (parking cars)
         carAssignments = parkingAssignments
-        // Wait for the parking animation to have some time to play
-        delay(400) // e.g., 400ms delay
 
+        // Wait for the last parking car to start its animation
+        val parkingDuration = (parkingSequence - 1).coerceAtLeast(0) * staggerDelay + 1000
+        delay(parkingDuration)
+
+        // Calculate delays for the DEPLOYING phase
+        val deployingDelays = MutableList(7) { 0L }
+        var deployingSequence = 0
+        for (i in 0 until 7) {
+            val isComingFromGarage = finalAssignments[i] !in garagePositions && previousAssignments.value[i] in garagePositions
+            if (isComingFromGarage) {
+                deployingDelays[i] = deployingSequence * staggerDelay
+                deployingSequence++
+            }
+        }
+
+        // Apply the deploying phase delays
+        carDelays = deployingDelays
         // Apply the second phase (deploying cars from garage).
         carAssignments = finalAssignments
 
@@ -116,7 +148,7 @@ fun DigitalCarNumber(number: Int) {
         // The rendering part remains the same.
         for (i in 0 until 7) {
             val targetPosition = carAssignments[i]
-            Car(carIndex = i, target = targetPosition)
+            Car(carIndex = i, target = targetPosition, delay = carDelays[i])
         }
     }
 }
