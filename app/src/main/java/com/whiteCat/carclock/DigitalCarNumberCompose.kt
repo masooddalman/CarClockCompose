@@ -59,9 +59,11 @@ val digitMap = mapOf(
 
 @Composable
 fun DigitalCarNumber(number: Int) {
-    //hold current car assignment
-    val carAssignments = remember(number) {
-        assignCarsToSegments(number)
+    var carAssignments by remember { mutableStateOf(List(7) { SegmentPosition.Garage }) }
+
+    // re-assign the cars when the number changes
+    LaunchedEffect(number) {
+        carAssignments = updateCarAssignments(number, carAssignments)
     }
 
     Box(
@@ -73,7 +75,7 @@ fun DigitalCarNumber(number: Int) {
         // rendering cars
         for (i in 0 until 7) {
             // finding target based on logic
-            val targetPosition = carAssignments.getOrElse(i) { SegmentPosition.Garage }
+            val targetPosition = carAssignments[i]
             Car(target = targetPosition)
         }
     }
@@ -130,25 +132,37 @@ fun Car(target: SegmentPosition) {
     )
 }
 
-// assigning cars
-fun assignCarsToSegments(digit: Int): List<SegmentPosition> {
-    val requiredSegments = digitMap[digit] ?: emptySet()
-    val assignments = mutableListOf<SegmentPosition>()
+// lazily assigning cars
+fun updateCarAssignments(digit: Int, previousAssignments: List<SegmentPosition>): List<SegmentPosition> {
+    val requiredSegments = digitMap[digit]?.toMutableSet() ?: mutableSetOf()
+    val newAssignments = MutableList<SegmentPosition?>(7) { null }
 
-    // we need a list for indexing
-    val requiredList = requiredSegments.toList()
-
-    // using cars as needed
+    // Identify cars that can stay in their current position
     for (i in 0 until 7) {
-        if (i < requiredList.size) {
-            // we need this car, send it to position
-            assignments.add(requiredList[i])
-        } else {
-            // we don't need it, send it ti garage
-            assignments.add(SegmentPosition.Garage)
+        val currentPos = previousAssignments[i]
+        if (currentPos in requiredSegments) {
+            newAssignments[i] = currentPos
+            requiredSegments.remove(currentPos) // Mark this segment as filled
         }
     }
-    return assignments
+
+    // Assign available cars to the remaining required segments
+    val remainingSegments = requiredSegments.toList()
+    var segmentIndex = 0
+    for (i in 0 until 7) {
+        // If car `i` hasn't been assigned a position yet, it's available
+        if (newAssignments[i] == null) {
+            if (segmentIndex < remainingSegments.size) {
+                // Assign this car to a remaining segment
+                newAssignments[i] = remainingSegments[segmentIndex]
+                segmentIndex++
+            } else {
+                // If no more segments are required, send the car to the garage
+                newAssignments[i] = SegmentPosition.Garage
+            }
+        }
+    }
+    return newAssignments.map { it!! }
 }
 
 @Preview(showBackground = true)
