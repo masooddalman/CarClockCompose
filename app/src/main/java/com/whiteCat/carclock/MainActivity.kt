@@ -40,7 +40,6 @@ class MainActivity : ComponentActivity() {
 
                         Spacer(modifier = Modifier.height(30.dp))
 
-                        // کنترلر برای تست
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(onClick = { if (currentDigit > 0) currentDigit-- }) { Text("-") }
                             Text(text = "$currentDigit", modifier = Modifier.padding(16.dp))

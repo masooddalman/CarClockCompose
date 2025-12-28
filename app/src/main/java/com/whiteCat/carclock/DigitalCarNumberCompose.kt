@@ -1,16 +1,29 @@
 package com.whiteCat.carclock
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.abs
+import kotlinx.coroutines.delay
 
 // static segment positions of a digit number
 enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
@@ -22,7 +35,7 @@ enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
     BottomRight(2, 3, 90f),
     Bottom(1, 4, 0f),
     // garage position to store extra pieces
-    Garage(-5, -5, 45f) 
+    Garage(-5, -5, 45f)
 }
 
 
@@ -68,23 +81,50 @@ fun DigitalCarNumber(number: Int) {
 
 @Composable
 fun Car(target: SegmentPosition) {
-    // animation settings
-    val animSpec = tween<Dp>(durationMillis = 800, easing = FastOutSlowInEasing)
-    val rotSpec = tween<Float>(durationMillis = 800, easing = FastOutSlowInEasing)
-
-
     val gridSize = 50
-    
-    // animation X و Y
-    val animatedX by animateDpAsState(targetValue = (target.x * gridSize).dp, animationSpec = animSpec)
-    val animatedY by animateDpAsState(targetValue = (target.y * gridSize).dp, animationSpec = animSpec)
-    val animatedRotation by animateFloatAsState(targetValue = target.rotation, animationSpec = rotSpec)
+
+    val animatedX = remember { Animatable((SegmentPosition.Garage.x * gridSize).toFloat()) }
+    val animatedY = remember { Animatable((SegmentPosition.Garage.y * gridSize).toFloat()) }
+    val animatedRotation = remember { Animatable(SegmentPosition.Garage.rotation) }
+
+    LaunchedEffect(target) {
+        val targetX = (target.x * gridSize).toFloat()
+        val targetY = (target.y * gridSize).toFloat()
+
+        val currentX = animatedX.value
+        val currentY = animatedY.value
+
+        val xTravelDuration = (abs(targetX - currentX) / gridSize * 300).toLong().coerceIn(200, 800)
+        val yTravelDuration = (abs(targetY - currentY) / gridSize * 300).toLong().coerceIn(200, 800)
+
+        // Move horizontally
+        if (abs(currentX - targetX) > 0.1f) {
+            val rotation = if (targetX > currentX) 0f else 180f
+            // Rotate first
+            animatedRotation.animateTo(rotation, tween(durationMillis = 200, easing = LinearEasing))
+            // Then move
+            animatedX.animateTo(targetX, tween(durationMillis = xTravelDuration.toInt(), easing = FastOutSlowInEasing))
+        }
+
+        // Move vertically
+        if (abs(currentY - targetY) > 0.1f) {
+            val rotation = if (targetY > currentY) 90f else -90f
+            // Rotate first
+            animatedRotation.animateTo(rotation, tween(durationMillis = 200, easing = LinearEasing))
+            // Then move
+            animatedY.animateTo(targetY, tween(durationMillis = yTravelDuration.toInt(), easing = FastOutSlowInEasing))
+        }
+
+        // Final rotation at destination
+        animatedRotation.animateTo(target.rotation, tween(durationMillis = 200))
+    }
+
 
     // the car
     Box(
         modifier = Modifier
-            .offset(x = animatedX + 10.dp, y = animatedY + 10.dp) // +10 for margin
-            .rotate(animatedRotation)
+            .offset(x = animatedX.value.dp + 10.dp, y = animatedY.value.dp + 10.dp) // +10 for margin
+            .rotate(animatedRotation.value)
             .size(width = 75.dp, height = 15.dp) // car size
             .background(Color.Red, RoundedCornerShape(4.dp))
     )
@@ -94,7 +134,7 @@ fun Car(target: SegmentPosition) {
 fun assignCarsToSegments(digit: Int): List<SegmentPosition> {
     val requiredSegments = digitMap[digit] ?: emptySet()
     val assignments = mutableListOf<SegmentPosition>()
-    
+
     // we need a list for indexing
     val requiredList = requiredSegments.toList()
 
@@ -113,6 +153,15 @@ fun assignCarsToSegments(digit: Int): List<SegmentPosition> {
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    DigitalCarNumber(number = 0)
+fun DigitalCarNumberPreview() {
+    var number by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(5000) // delay between number changes
+            number = (number + 1) % 10
+        }
+    }
+
+    DigitalCarNumber(number = number)
 }
