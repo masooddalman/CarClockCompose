@@ -176,20 +176,34 @@ fun updateCarAssignments(digit: Int, previousAssignments: List<SegmentPosition>)
         SegmentPosition.Bottom
     )
 
+    val garagePositions = setOf(
+        SegmentPosition.GarageTopLeft,
+        SegmentPosition.GarageTopRight,
+        SegmentPosition.GarageBottomLeft,
+        SegmentPosition.GarageBottomRight
+    )
+
     return List(7) { carIndex ->
         val preferredSegment = preferredSegments[carIndex]
+        val previousPosition = previousAssignments[carIndex]
         if (preferredSegment in requiredSegments) {
             // If this car's preferred segment is needed for the new digit, assign it there.
             preferredSegment
         } else {
-            // Otherwise, send the car to its specific garage based on the new rules.
-            when (carIndex) {
-                0, 1 -> SegmentPosition.GarageTopLeft
-                2 -> SegmentPosition.GarageTopRight
-                3 -> if (java.util.Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopRight
-                4 -> SegmentPosition.GarageBottomLeft
-                5, 6 -> SegmentPosition.GarageBottomRight
-                else -> SegmentPosition.GarageBottomRight // Default fallback
+            // only move the car if it's not already in a garage
+            // and it's already in a garage, keep it there.
+            if (previousPosition in garagePositions) {
+                previousPosition
+            } else {
+                // send it to its designated garage.
+                when (carIndex) {
+                    0, 1 -> SegmentPosition.GarageTopLeft
+                    2 -> SegmentPosition.GarageTopRight
+                    3 -> if (java.util.Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopRight
+                    4 -> SegmentPosition.GarageBottomLeft
+                    5, 6 -> SegmentPosition.GarageBottomRight
+                    else -> SegmentPosition.GarageBottomRight // Default fallback
+                }
             }
         }
     }
