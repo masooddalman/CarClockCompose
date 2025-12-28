@@ -11,12 +11,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
@@ -152,9 +154,12 @@ fun Car(carIndex: Int, target: SegmentPosition) {
         modifier = Modifier
             .offset(x = animatedX.value.dp + 10.dp, y = animatedY.value.dp + 10.dp) // +10 for margin
             .rotate(animatedRotation.value)
-            .size(width = 75.dp, height = 15.dp) // car size
-            .background(Color.Red, RoundedCornerShape(4.dp))
-    )
+            .size(width = 75.dp, height = 30.dp) // car size
+            .background(Color.Red, RoundedCornerShape(4.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("$carIndex")
+    }
 }
 
 // lazily assigning cars
@@ -188,7 +193,6 @@ fun updateCarAssignments(digit: Int, previousAssignments: List<SegmentPosition>)
             }
         }
     }
-    return newAssignments.map { it!! }
 }
 
 @Preview(showBackground = true)
