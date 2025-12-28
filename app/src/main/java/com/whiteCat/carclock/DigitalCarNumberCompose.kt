@@ -4,25 +4,20 @@ import Car
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import kotlin.math.abs
 import kotlinx.coroutines.delay
+import java.util.Random
 
 // static segment positions of a digit number
 enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
@@ -65,9 +60,9 @@ fun DigitalCarNumber(number: Int) {
         mutableStateOf(
             List(7) { i ->
                 when (i) {
-                    0, 1 -> SegmentPosition.GarageTopLeft
-                    2 -> SegmentPosition.GarageTopRight
-                    3 -> if (java.util.Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopRight
+                    1 -> SegmentPosition.GarageTopLeft
+                    0, 2 -> SegmentPosition.GarageTopRight
+                    3 -> if (Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopLeft
                     4 -> SegmentPosition.GarageBottomLeft
                     5, 6 -> SegmentPosition.GarageBottomRight
                     else -> SegmentPosition.GarageBottomRight
@@ -161,9 +156,9 @@ fun updateCarAssignments(digit: Int, previousAssignments: List<SegmentPosition>)
             } else {
                 // send it to its designated garage.
                 when (carIndex) {
-                    0, 1 -> SegmentPosition.GarageTopLeft
-                    2 -> SegmentPosition.GarageTopRight
-                    3 -> if (java.util.Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopRight
+                    1 -> SegmentPosition.GarageTopLeft
+                    0, 2 -> SegmentPosition.GarageTopRight
+                    3 -> if (Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopLeft
                     4 -> SegmentPosition.GarageBottomLeft
                     5, 6 -> SegmentPosition.GarageBottomRight
                     else -> SegmentPosition.GarageBottomRight // Default fallback
