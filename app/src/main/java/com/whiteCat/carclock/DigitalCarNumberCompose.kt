@@ -73,15 +73,46 @@ fun DigitalCarNumber(number: Int) {
                     3 -> if (java.util.Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopRight
                     4 -> SegmentPosition.GarageBottomLeft
                     5, 6 -> SegmentPosition.GarageBottomRight
-                    else -> SegmentPosition.GarageBottomRight // Default fallback
+                    else -> SegmentPosition.GarageBottomRight
                 }
             }
         )
     }
 
-    // re-assign the cars when the number changes
+    // the previous state to calculate the transitions
+    val previousAssignments = remember { mutableStateOf(carAssignments) }
+
     LaunchedEffect(number) {
-        carAssignments = updateCarAssignments(number, carAssignments)
+        // Calculate the final, desired state for the new number
+        val finalAssignments = updateCarAssignments(number, previousAssignments.value)
+
+        val garagePositions = setOf(
+            SegmentPosition.GarageTopLeft,
+            SegmentPosition.GarageTopRight,
+            SegmentPosition.GarageBottomLeft,
+            SegmentPosition.GarageBottomRight
+        )
+
+        // Create the intermediate state: only move cars TO the garage
+        val parkingAssignments = List(7) { i ->
+            val isGoingToGarage = finalAssignments[i] in garagePositions && previousAssignments.value[i] !in garagePositions
+            if (isGoingToGarage) {
+                finalAssignments[i] // Send this car to the garage now
+            } else {
+                previousAssignments.value[i] // Keep others in their current spot
+            }
+        }
+
+        // Apply the first phase (parking cars)
+        carAssignments = parkingAssignments
+        // Wait for the parking animation to have some time to play
+        delay(400) // e.g., 400ms delay
+
+        // Apply the second phase (deploying cars from garage).
+        carAssignments = finalAssignments
+
+        // Update the previous state for the next number change.
+        previousAssignments.value = finalAssignments
     }
 
     Box(
@@ -90,14 +121,14 @@ fun DigitalCarNumber(number: Int) {
             .height(300.dp)
             .background(Color.Black.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
     ) {
-        // rendering cars
+        // The rendering part remains the same.
         for (i in 0 until 7) {
-            // finding target based on logic
             val targetPosition = carAssignments[i]
             Car(carIndex = i, target = targetPosition)
         }
     }
 }
+
 
 @Composable
 fun Car(carIndex: Int, target: SegmentPosition) {
