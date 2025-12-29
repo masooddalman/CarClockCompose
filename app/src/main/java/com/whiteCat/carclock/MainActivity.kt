@@ -30,22 +30,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CarClockTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
                     var currentDigit by remember { mutableIntStateOf(8) }
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(innerPadding),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         DigitalCarNumber(number = currentDigit)
+                        DigitalCarNumber(number = currentDigit)
+                        ClockDigitSeparator()
+                        DigitalCarNumber(number = currentDigit)
+                        DigitalCarNumber(number = currentDigit)
 
-                        Spacer(modifier = Modifier.height(30.dp))
-
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { if (currentDigit > 0) currentDigit-- else currentDigit = 9}) { Text("-") }
-                            Text(text = "$currentDigit", modifier = Modifier.padding(16.dp))
-                            Button(onClick = { if (currentDigit < 9) currentDigit++ else currentDigit = 0}) { Text("+") }
-                        }
                     }
                 }
             }
