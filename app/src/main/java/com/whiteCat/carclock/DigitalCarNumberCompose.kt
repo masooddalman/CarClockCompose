@@ -3,6 +3,8 @@ package com.whiteCat.carclock
 import Car
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,7 +58,7 @@ val digitMap = mapOf(
 )
 
 @Composable
-fun DigitalCarNumber(number: Int) {
+fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
     var carAssignments by remember {
         mutableStateOf(
             List(7) { i ->
@@ -140,15 +143,23 @@ fun DigitalCarNumber(number: Int) {
     }
 
     Box(
-        modifier = Modifier
-            .width(300.dp)
-            .height(300.dp)
-            .background(Color.Black.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+        modifier = modifier
+            .fillMaxHeight()
+            .width(180.dp)
+            .background(Color.Black.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
+        contentAlignment = Alignment.Center
     ) {
-        // The rendering part remains the same.
-        for (i in 0 until 7) {
-            val targetPosition = carAssignments[i]
-            Car(carIndex = i, target = targetPosition, delay = carDelays[i])
+        Box(
+            modifier = Modifier
+                .width(180.dp) // Approximate width of the digit layout
+                .height(280.dp)
+                .background(Color.Yellow)// Approximate height of the digit layout
+        ) {
+            // The rendering part remains the same.
+            for (i in 0 until 7) {
+                val targetPosition = carAssignments[i]
+                Car(carIndex = i, target = targetPosition, delay = carDelays[i])
+            }
         }
     }
 }
