@@ -32,12 +32,12 @@ enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
     BottomRight(2, 3, 90f),
     Bottom(1, 4, 0f),
     // garage positions
-    GarageTopLeft(-2, -2, 45f),
-    GarageTopCenter(1, -2, 0f),
-    GarageTopRight(4, -2, -45f),
-    GarageBottomLeft(-2, 6, -45f),
-    GarageBottomCenter(1, 6, 0f),
-    GarageBottomRight(4, 6, 45f)
+    GarageTopLeft(-2, -3, 45f),
+    GarageTopCenter(1, -3, 0f),
+    GarageTopRight(4, -3, -45f),
+    GarageBottomLeft(-2, 8, -45f),
+    GarageBottomCenter(1, 8, 0f),
+    GarageBottomRight(4, 8, 45f)
 }
 
 
@@ -144,15 +144,15 @@ fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .width(180.dp)
-            .background(Color.Black.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
+            .width(180.dp),
+//            .background(Color.Black.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .width(180.dp) // Approximate width of the digit layout
                 .height(280.dp)
-                .background(Color.Yellow)// Approximate height of the digit layout
+//                .background(Color.Yellow)// Approximate height of the digit layout
         ) {
             // The rendering part remains the same.
             for (i in 0 until 7) {
