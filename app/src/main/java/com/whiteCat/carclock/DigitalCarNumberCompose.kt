@@ -32,9 +32,11 @@ enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
     BottomRight(2, 3, 90f),
     Bottom(1, 4, 0f),
     // garage positions
-    GarageTopLeft(-2, -3, 45f),
-    GarageTopRight(4, -3, 45f),
-    GarageBottomLeft(-2, 6, 45f),
+    GarageTopLeft(-2, -2, 45f),
+    GarageTopCenter(1, -2, 0f),
+    GarageTopRight(4, -2, -45f),
+    GarageBottomLeft(-2, 6, -45f),
+    GarageBottomCenter(1, 6, 0f),
     GarageBottomRight(4, 6, 45f)
 }
 
@@ -61,16 +63,15 @@ val digitMap = mapOf(
 fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
     var carAssignments by remember {
         mutableStateOf(
-            List(7) { i ->
-                when (i) {
-                    1 -> SegmentPosition.GarageTopLeft
-                    0, 2 -> SegmentPosition.GarageTopRight
-                    3 -> if (Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopLeft
-                    4 -> SegmentPosition.GarageBottomLeft
-                    5, 6 -> SegmentPosition.GarageBottomRight
-                    else -> SegmentPosition.GarageBottomRight
-                }
-            }
+            listOf(
+                SegmentPosition.GarageTopCenter,    // Car 0
+                SegmentPosition.GarageTopLeft,      // Car 1
+                SegmentPosition.GarageTopRight,     // Car 2
+                SegmentPosition.GarageTopCenter,    // Car 3 (same as car 0)
+                SegmentPosition.GarageBottomLeft,   // Car 4
+                SegmentPosition.GarageBottomRight,  // Car 5
+                SegmentPosition.GarageBottomCenter  // Car 6
+            )
         )
     }
 
@@ -84,10 +85,8 @@ fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
         val finalAssignments = updateCarAssignments(number, previousAssignments.value)
 
         val garagePositions = setOf(
-            SegmentPosition.GarageTopLeft,
-            SegmentPosition.GarageTopRight,
-            SegmentPosition.GarageBottomLeft,
-            SegmentPosition.GarageBottomRight
+            SegmentPosition.GarageTopLeft, SegmentPosition.GarageTopCenter, SegmentPosition.GarageTopRight,
+            SegmentPosition.GarageBottomLeft, SegmentPosition.GarageBottomCenter, SegmentPosition.GarageBottomRight
         )
 
         val staggerDelay = 300L // Delay in ms between each car starting
@@ -179,10 +178,8 @@ fun updateCarAssignments(digit: Int, previousAssignments: List<SegmentPosition>)
     )
 
     val garagePositions = setOf(
-        SegmentPosition.GarageTopLeft,
-        SegmentPosition.GarageTopRight,
-        SegmentPosition.GarageBottomLeft,
-        SegmentPosition.GarageBottomRight
+        SegmentPosition.GarageTopLeft, SegmentPosition.GarageTopCenter, SegmentPosition.GarageTopRight,
+        SegmentPosition.GarageBottomLeft, SegmentPosition.GarageBottomCenter, SegmentPosition.GarageBottomRight
     )
 
     return List(7) { carIndex ->
@@ -199,12 +196,14 @@ fun updateCarAssignments(digit: Int, previousAssignments: List<SegmentPosition>)
             } else {
                 // send it to its designated garage.
                 when (carIndex) {
+                    0 -> SegmentPosition.GarageTopCenter
                     1 -> SegmentPosition.GarageTopLeft
-                    0, 2 -> SegmentPosition.GarageTopRight
-                    3 -> if (Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopLeft
+                    2 -> SegmentPosition.GarageTopRight
+                    3 -> SegmentPosition.GarageTopCenter
                     4 -> SegmentPosition.GarageBottomLeft
-                    5, 6 -> SegmentPosition.GarageBottomRight
-                    else -> SegmentPosition.GarageBottomRight // Default fallback
+                    5 -> SegmentPosition.GarageBottomRight
+                    6 -> SegmentPosition.GarageBottomCenter
+                    else -> SegmentPosition.GarageTopCenter
                 }
             }
         }
