@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.whiteCat.carclock.PathDefinition
 import com.whiteCat.carclock.SegmentPosition
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -76,12 +77,17 @@ private data class SegmentDetails(val position: Offset, val controlPoint: Offset
 
 
 @Composable
-fun Car(carIndex: Int, target: SegmentPosition, delay: Long = 300) {
+fun Car(path: PathDefinition, delay: Long = 300) {
     val gridSize = 50f
-    val controlPointDistance = 100f // Controls the "roundness" of all curves
+    val carIndex = path.carIndex
 
-    // Create a stable map of segment details, including their canonical control points
-    val segmentDetailsMap = remember {
+    val controlPointDistance = remember(carIndex) {
+        val baseDistance = 80f
+        val perCarOffset = 15f
+        baseDistance + (carIndex * perCarOffset)
+    }
+
+    val segmentDetailsMap = remember(controlPointDistance) {
         SegmentPosition.values().associateWith { segment ->
             val position = Offset(segment.x * gridSize, segment.y * gridSize)
             val angleRad = Math.toRadians(segment.rotation.toDouble()).toFloat()
@@ -93,25 +99,22 @@ fun Car(carIndex: Int, target: SegmentPosition, delay: Long = 300) {
         }
     }
 
-    var previousTarget by remember { mutableStateOf(target) }
-    val progress = remember { Animatable(1f) }
-    var currentPos by remember { mutableStateOf(segmentDetailsMap.getValue(target).position) }
-    var currentRotation by remember { mutableStateOf(target.rotation) }
+    val initialPosition = segmentDetailsMap.getValue(path.start).position
+    var currentPos by remember { mutableStateOf(initialPosition) }
+    var currentRotation by remember { mutableStateOf(path.start.rotation) }
+    val progress = remember { Animatable(0f) }
 
-    LaunchedEffect(target) {
-        val startDetails = segmentDetailsMap.getValue(previousTarget)
-        val endDetails = segmentDetailsMap.getValue(target)
-
+    LaunchedEffect(path) {
+        val startDetails = segmentDetailsMap.getValue(path.start)
+        val endDetails = segmentDetailsMap.getValue(path.end)
         val startPosition = startDetails.position
         val endPosition = endDetails.position
 
-        // Don't animate if the position hasn't changed
-        if ((startPosition - endPosition).getDistanceSquared() < 0.1f) {
-            // Animate only the rotation if needed (e.g., car turning in place)
-            val rotationAnim = Animatable(currentRotation)
-            rotationAnim.animateTo(target.rotation, tween(300))
-            currentRotation = rotationAnim.value
-            previousTarget = target
+        // If start and end are the same, snap to the position and do nothing.
+        if (startPosition == endPosition) {
+            currentPos = endPosition
+            currentRotation = path.end.rotation
+            progress.snapTo(1f) // Mark as "done"
             return@LaunchedEffect
         }
 
@@ -121,34 +124,32 @@ fun Car(carIndex: Int, target: SegmentPosition, delay: Long = 300) {
         val controlPoint2 = endDetails.controlPoint
 
         progress.snapTo(0f)
-
-        progress.animateTo(1f, tween(durationMillis = 1000, easing = FastOutSlowInEasing, delayMillis = delay.toInt())) {
-            // 'value' is the animation progress 't' from 0f to 1f
+        progress.animateTo(
+            1f,
+            tween(
+                durationMillis = 3000,
+                easing = FastOutSlowInEasing,
+                delayMillis = delay.toInt()
+            )
+        ) {
             currentPos = getBezierPoint(value, startPosition, controlPoint1, controlPoint2, endPosition)
             val tangent = getBezierTangent(value, startPosition, controlPoint1, controlPoint2, endPosition)
             if (tangent.getDistanceSquared() > 0) {
                 currentRotation = Math.toDegrees(atan2(tangent.y, tangent.x).toDouble()).toFloat()
             }
         }
-
-        // Snap to final values for perfect alignment
         currentPos = endPosition
-        currentRotation = target.rotation
-        previousTarget = target
+        currentRotation = path.end.rotation
     }
 
-    // The rest of the Car UI remains the same
     Box(
         modifier = Modifier
-            .offset(
-                x = currentPos.x.dp + 10.dp, // +10 for margin
-                y = currentPos.y.dp + 10.dp
-            )
+            .offset(x = currentPos.x.dp + 10.dp, y = currentPos.y.dp + 10.dp)
             .rotate(currentRotation)
             .size(width = 75.dp, height = 30.dp)
             .background(Color.Red, RoundedCornerShape(4.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Text("$carIndex")
+        Text("$carIndex", color = Color.White)
     }
 }

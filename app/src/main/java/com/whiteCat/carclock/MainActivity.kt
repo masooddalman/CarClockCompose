@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,6 +48,8 @@ class MainActivity : ComponentActivity() {
             CarClockTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
 
+                    val debugMode by remember { mutableStateOf(false) }
+
                     var hourTens by remember { mutableIntStateOf(0) }
                     var hourUnits by remember { mutableIntStateOf(0) }
                     var minuteTens by remember { mutableIntStateOf(0) }
@@ -61,27 +64,29 @@ class MainActivity : ComponentActivity() {
 
                     LaunchedEffect(Unit) {
 
-                        calculateClock(
-                            hour = { hourTensString ->
-                                hourTens = hourTensString[0].digitToInt()
-                                hourUnits = hourTensString[1].digitToInt()
-                            },
-                            minute = { minuteTensString ->
-                                minuteTens = minuteTensString[0].digitToInt()
-                                minuteUnits = minuteTensString[1].digitToInt()
-                            },
-                            second = { secondString ->
-                                val currentSecond = secondString.toFloat()
-                                val targetAngle = currentSecond / 60f
-                                secondProgress.animateTo(
-                                    targetValue = targetAngle,
-                                    animationSpec = tween(
-                                        durationMillis = 600, // Animate over 1 second
-                                        easing = EaseOutBounce
+                        if(!debugMode) {
+                            calculateClock(
+                                hour = { hourTensString ->
+                                    hourTens = hourTensString[0].digitToInt()
+                                    hourUnits = hourTensString[1].digitToInt()
+                                },
+                                minute = { minuteTensString ->
+                                    minuteTens = minuteTensString[0].digitToInt()
+                                    minuteUnits = minuteTensString[1].digitToInt()
+                                },
+                                second = { secondString ->
+                                    val currentSecond = secondString.toFloat()
+                                    val targetAngle = currentSecond / 60f
+                                    secondProgress.animateTo(
+                                        targetValue = targetAngle,
+                                        animationSpec = tween(
+                                            durationMillis = 600, // Animate over 1 second
+                                            easing = EaseOutBounce
+                                        )
                                     )
-                                )
-                            }
-                        )
+                                }
+                            )
+                        }
                     }
                     Box(
                         modifier = Modifier
@@ -119,7 +124,20 @@ class MainActivity : ComponentActivity() {
                         ) {
                             DigitalCarNumber(number = hourTens)
                             DigitalCarNumber(number = hourUnits)
-                            ClockDigitSeparator()
+                            ClockDigitSeparator(
+                                onNext = if (debugMode) {
+                                    {
+                                        val nextValue = (minuteUnits + 1) % 10
+                                        minuteUnits = nextValue
+                                    }
+                                } else null,
+                                onPrevious = if (debugMode) {
+                                    {
+                                        val previousValue = if (minuteUnits == 0) 9 else minuteUnits - 1
+                                        minuteUnits = previousValue
+                                    }
+                                } else null
+                            )
                             DigitalCarNumber(number = minuteTens)
                             DigitalCarNumber(number = minuteUnits)
 

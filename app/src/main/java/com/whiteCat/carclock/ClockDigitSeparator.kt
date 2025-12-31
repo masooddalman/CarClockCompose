@@ -1,6 +1,7 @@
 package com.whiteCat.carclock
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -15,14 +16,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ClockDigitSeparator(){
+fun ClockDigitSeparator(onNext: (() -> Unit)? = null, onPrevious: (() -> Unit)? = null){
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
             painter = painterResource(id = R.drawable.cone),
             modifier = Modifier.width(75.dp)
-                .aspectRatio(1f),
+                .aspectRatio(1f)
+                .clickable(
+                    enabled = onNext != null,
+                    onClick = { onNext?.invoke() }
+                ),
             contentDescription = "Clock Separator Cone"
         )
 
@@ -31,7 +36,11 @@ fun ClockDigitSeparator(){
         Image(
             painter = painterResource(id = R.drawable.cone),
             modifier = Modifier.width(75.dp)
-                .aspectRatio(1f).rotate(180f),
+                .aspectRatio(1f).rotate(180f)
+                .clickable(
+                    enabled = onPrevious != null,
+                    onClick = { onPrevious?.invoke() }
+                ),
             contentDescription = "Clock Separator Cone"
         )
     }

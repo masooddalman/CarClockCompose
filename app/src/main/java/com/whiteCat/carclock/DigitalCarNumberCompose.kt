@@ -3,7 +3,6 @@ package com.whiteCat.carclock
 import Car
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -20,7 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import java.util.Random
 
 // static segment positions of a digit number
 enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
@@ -33,10 +31,67 @@ enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
     Bottom(1, 4, 0f),
     // garage positions
     GarageTopLeft(-2, -3, 45f),
-    GarageTopRight(4, -3, 45f),
-    GarageBottomLeft(-2, 6, 45f),
-    GarageBottomRight(4, 6, 45f)
+    GarageTopCenter(1, -3, 0f),
+    GarageTopRight(4, -3, -45f),
+    GarageBottomLeft(-2, 8, -45f),
+    GarageBottomCenter(1, 8, 0f),
+    GarageBottomRight(4, 8, 45f)
 }
+
+// if manual config missing, generate default paths
+fun generateDefaultPaths(fromDigit: Int, toDigit: Int): List<PathDefinition> {
+    val requiredSegmentsForFrom = digitMap[fromDigit] ?: setOf()
+    val requiredSegmentsForTo = digitMap[toDigit] ?: setOf()
+
+    val preferredSegments = listOf(
+        SegmentPosition.Top,
+        SegmentPosition.TopLeft,
+        SegmentPosition.TopRight,
+        SegmentPosition.Middle,
+        SegmentPosition.BottomLeft,
+        SegmentPosition.BottomRight,
+        SegmentPosition.Bottom
+    )
+
+    return List(7) { carIndex ->
+        val preferredSegment = preferredSegments[carIndex]
+
+        // Determine the start position
+        val startPos = if (preferredSegment in requiredSegmentsForFrom) {
+            preferredSegment // Car was on the digit
+        } else {
+            // Car was in its peer garage
+            when (carIndex) {
+                0, 3 -> SegmentPosition.GarageTopCenter
+                1 -> SegmentPosition.GarageTopLeft
+                2 -> SegmentPosition.GarageTopRight
+                4 -> SegmentPosition.GarageBottomLeft
+                5 -> SegmentPosition.GarageBottomRight
+                6 -> SegmentPosition.GarageBottomCenter
+                else -> SegmentPosition.GarageTopCenter
+            }
+        }
+
+        // Determine the end position
+        val endPos = if (preferredSegment in requiredSegmentsForTo) {
+            preferredSegment // Car needs to be on the digit
+        } else {
+            // Car needs to be in its peer garage
+            when (carIndex) {
+                0, 3 -> SegmentPosition.GarageTopCenter
+                1 -> SegmentPosition.GarageTopLeft
+                2 -> SegmentPosition.GarageTopRight
+                4 -> SegmentPosition.GarageBottomLeft
+                5 -> SegmentPosition.GarageBottomRight
+                6 -> SegmentPosition.GarageBottomCenter
+                else -> SegmentPosition.GarageTopCenter
+            }
+        }
+
+        PathDefinition(carIndex, start = startPos, end = endPos)
+    }
+}
+
 
 
 /**
@@ -59,153 +114,46 @@ val digitMap = mapOf(
 
 @Composable
 fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
-    var carAssignments by remember {
-        mutableStateOf(
-            List(7) { i ->
-                when (i) {
-                    1 -> SegmentPosition.GarageTopLeft
-                    0, 2 -> SegmentPosition.GarageTopRight
-                    3 -> if (Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopLeft
-                    4 -> SegmentPosition.GarageBottomLeft
-                    5, 6 -> SegmentPosition.GarageBottomRight
-                    else -> SegmentPosition.GarageBottomRight
-                }
+    var carPaths by remember {
+        mutableStateOf(List(7) { i ->
+            val initialGarage = when(i) {
+                0, 3 -> SegmentPosition.GarageTopCenter
+                1 -> SegmentPosition.GarageTopLeft
+                2 -> SegmentPosition.GarageTopRight
+                4 -> SegmentPosition.GarageBottomLeft
+                5 -> SegmentPosition.GarageBottomRight
+                else -> SegmentPosition.GarageBottomCenter
             }
-        )
+            PathDefinition(carIndex = i, start = initialGarage, end = initialGarage)
+        })
     }
 
-    // the previous state to calculate the transitions
-    val previousAssignments = remember { mutableStateOf(carAssignments) }
-    // holds the calculated delays for each car
-    var carDelays by remember { mutableStateOf(List(7) { 0L }) }
+    var previousNumber by remember { mutableStateOf(0) } // Assuming start from 0
+    val staggerDelay = 500L // Delay in ms between each car starting
 
     LaunchedEffect(number) {
-        // Calculate the final, desired state for the new number
-        val finalAssignments = updateCarAssignments(number, previousAssignments.value)
+        // Requirement 1 & 2: Check for a manual config first.
+        val config = TransitionConfig.getInstance().data[previousNumber to number]
+        val newPaths = config?.paths ?: generateDefaultPaths(previousNumber, number)
 
-        val garagePositions = setOf(
-            SegmentPosition.GarageTopLeft,
-            SegmentPosition.GarageTopRight,
-            SegmentPosition.GarageBottomLeft,
-            SegmentPosition.GarageBottomRight
-        )
-
-        val staggerDelay = 300L // Delay in ms between each car starting
-
-        // Calculate delays for the PARKING phase ---
-        val parkingDelays = MutableList(7) { 0L }
-        var parkingSequence = 0
-        for (i in 0 until 7) {
-            val isGoingToGarage = finalAssignments[i] in garagePositions && previousAssignments.value[i] !in garagePositions
-            if (isGoingToGarage) {
-                parkingDelays[i] = parkingSequence * staggerDelay
-                parkingSequence++
-            }
-        }
-
-        // Create the intermediate state: only move cars TO the garage
-        val parkingAssignments = List(7) { i ->
-            val isGoingToGarage = finalAssignments[i] in garagePositions && previousAssignments.value[i] !in garagePositions
-            if (isGoingToGarage) {
-                finalAssignments[i] // Send this car to the garage now
-            } else {
-                previousAssignments.value[i] // Keep others in their current spot
-            }
-        }
-
-        // Apply the parking phase delays
-        carDelays = parkingDelays
-        // Apply the first phase (parking cars)
-        carAssignments = parkingAssignments
-
-        // Wait for the last parking car to start its animation
-        val parkingDuration = (parkingSequence - 1).coerceAtLeast(0) * staggerDelay + 1000
-        delay(parkingDuration)
-
-        // Calculate delays for the DEPLOYING phase
-        val deployingDelays = MutableList(7) { 0L }
-        var deployingSequence = 0
-        for (i in 0 until 7) {
-            val isComingFromGarage = finalAssignments[i] !in garagePositions && previousAssignments.value[i] in garagePositions
-            if (isComingFromGarage) {
-                deployingDelays[i] = deployingSequence * staggerDelay
-                deployingSequence++
-            }
-        }
-
-        // Apply the deploying phase delays
-        carDelays = deployingDelays
-        // Apply the second phase (deploying cars from garage).
-        carAssignments = finalAssignments
-
-        // Update the previous state for the next number change.
-        previousAssignments.value = finalAssignments
+        carPaths = newPaths
+        previousNumber = number
     }
 
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .width(180.dp)
-            .background(Color.Black.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
+            .width(180.dp),
+//            .background(Color.Black.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .width(180.dp) // Approximate width of the digit layout
-                .height(280.dp)
-                .background(Color.Yellow)// Approximate height of the digit layout
-        ) {
-            // The rendering part remains the same.
-            for (i in 0 until 7) {
-                val targetPosition = carAssignments[i]
-                Car(carIndex = i, target = targetPosition, delay = carDelays[i])
-            }
-        }
-    }
-}
-
-// lazily assigning cars
-fun updateCarAssignments(digit: Int, previousAssignments: List<SegmentPosition>): List<SegmentPosition> {
-    val requiredSegments = digitMap[digit] ?: setOf()
-    // Define preferred segment for each car. This creates a stable mapping.
-    val preferredSegments = listOf(
-        SegmentPosition.Top,
-        SegmentPosition.TopLeft,
-        SegmentPosition.TopRight,
-        SegmentPosition.Middle,
-        SegmentPosition.BottomLeft,
-        SegmentPosition.BottomRight,
-        SegmentPosition.Bottom
-    )
-
-    val garagePositions = setOf(
-        SegmentPosition.GarageTopLeft,
-        SegmentPosition.GarageTopRight,
-        SegmentPosition.GarageBottomLeft,
-        SegmentPosition.GarageBottomRight
-    )
-
-    return List(7) { carIndex ->
-        val preferredSegment = preferredSegments[carIndex]
-        val previousPosition = previousAssignments[carIndex]
-        if (preferredSegment in requiredSegments) {
-            // If this car's preferred segment is needed for the new digit, assign it there.
-            preferredSegment
-        } else {
-            // only move the car if it's not already in a garage
-            // and it's already in a garage, keep it there.
-            if (previousPosition in garagePositions) {
-                previousPosition
-            } else {
-                // send it to its designated garage.
-                when (carIndex) {
-                    1 -> SegmentPosition.GarageTopLeft
-                    0, 2 -> SegmentPosition.GarageTopRight
-                    3 -> if (Random().nextBoolean()) SegmentPosition.GarageBottomLeft else SegmentPosition.GarageTopLeft
-                    4 -> SegmentPosition.GarageBottomLeft
-                    5, 6 -> SegmentPosition.GarageBottomRight
-                    else -> SegmentPosition.GarageBottomRight // Default fallback
-                }
+        Box(modifier = Modifier.width(180.dp).height(280.dp)) {
+            // Requirement 4: The animation order is dictated by the list order.
+            carPaths.forEachIndexed { index, path ->
+                Car(
+                    path = path,
+                    delay = index * staggerDelay
+                )
             }
         }
     }
