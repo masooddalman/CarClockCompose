@@ -1,12 +1,12 @@
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,9 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.whiteCat.carclock.PathDefinition
+import com.whiteCat.carclock.R
 import com.whiteCat.carclock.SegmentPosition
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -146,10 +147,15 @@ fun Car(path: PathDefinition, delay: Long = 300) {
         modifier = Modifier
             .offset(x = currentPos.x.dp + 10.dp, y = currentPos.y.dp + 10.dp)
             .rotate(currentRotation)
-            .size(width = 75.dp, height = 30.dp)
-            .background(Color.Red, RoundedCornerShape(4.dp)),
+            .size(width = 75.dp, height = 30.dp),
+//            .background(Color.Red, RoundedCornerShape(4.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Text("$carIndex", color = Color.White)
+        Image(
+            painter = painterResource(id = R.drawable.car_white1),
+            modifier = Modifier.width(75.dp)
+                .aspectRatio(1f),
+            contentDescription = "car${carIndex}"
+        )
     }
 }
