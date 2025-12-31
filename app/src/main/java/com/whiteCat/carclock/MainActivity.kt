@@ -5,10 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.EaseInOutBounce
 import androidx.compose.animation.core.EaseOutBounce
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -32,13 +31,14 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.whiteCat.carclock.ui.theme.CarClockTheme
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.Callable
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,58 +89,71 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp) // Add padding to not have the border on the edge
-                            .drawBehind {
-
-                                val segmentPath = drawSecondHandle(
-                                    path = path,
-                                    pathMeasure = pathMeasure,
-                                    secondProgress = secondProgress,
-                                    size = size,
-                                    cornerRadius = CornerRadius(secondHandleCornerRadius.toPx()),
-                                    strokeWidth = secondHandleWidth.toPx()
-                                )
-
-                                // Draw the segmented path
-                                drawPath(
-                                    path = segmentPath,
-                                    color = Color.Cyan,
-                                    style = Stroke(
-                                        width = secondHandleWidth.toPx(),
-                                        cap = StrokeCap.Round
-                                    )
-                                )
-                            },
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
+                    ){
+
+                        Image(
+                            painter = painterResource(id = R.drawable.asphalt),
+                            contentDescription = "Asphalt background",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.FillBounds // Use Crop to fill without distortion
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp) // Add padding to not have the border on the edge
+                                .drawBehind {
+
+                                    val segmentPath = drawSecondHandle(
+                                        path = path,
+                                        pathMeasure = pathMeasure,
+                                        secondProgress = secondProgress,
+                                        size = size,
+                                        cornerRadius = CornerRadius(secondHandleCornerRadius.toPx()),
+                                        strokeWidth = secondHandleWidth.toPx()
+                                    )
+
+                                    // Draw the segmented path
+                                    drawPath(
+                                        path = segmentPath,
+                                        color = Color.Cyan,
+                                        style = Stroke(
+                                            width = secondHandleWidth.toPx(),
+                                            cap = StrokeCap.Round
+                                        )
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
 
                         ){
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            DigitalCarNumber(number = hourTens)
-                            DigitalCarNumber(number = hourUnits)
-                            ClockDigitSeparator(
-                                onNext = if (debugMode) {
-                                    {
-                                        val nextValue = (minuteUnits + 1) % 10
-                                        minuteUnits = nextValue
-                                    }
-                                } else null,
-                                onPrevious = if (debugMode) {
-                                    {
-                                        val previousValue = if (minuteUnits == 0) 9 else minuteUnits - 1
-                                        minuteUnits = previousValue
-                                    }
-                                } else null
-                            )
-                            DigitalCarNumber(number = minuteTens)
-                            DigitalCarNumber(number = minuteUnits)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                DigitalCarNumber(number = hourTens)
+                                DigitalCarNumber(number = hourUnits)
+                                ClockDigitSeparator(
+                                    onNext = if (debugMode) {
+                                        {
+                                            val nextValue = (minuteUnits + 1) % 10
+                                            minuteUnits = nextValue
+                                        }
+                                    } else null,
+                                    onPrevious = if (debugMode) {
+                                        {
+                                            val previousValue = if (minuteUnits == 0) 9 else minuteUnits - 1
+                                            minuteUnits = previousValue
+                                        }
+                                    } else null
+                                )
+                                DigitalCarNumber(number = minuteTens)
+                                DigitalCarNumber(number = minuteUnits)
 
+                            }
                         }
                     }
                 }
