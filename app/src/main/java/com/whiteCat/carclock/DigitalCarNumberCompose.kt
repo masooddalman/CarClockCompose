@@ -1,6 +1,5 @@
 package com.whiteCat.carclock
 
-import Car
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -23,12 +22,12 @@ import kotlinx.coroutines.delay
 // static segment positions of a digit number
 enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
     Top(1, 0, 0f),
-    TopLeft(0, 1, 90f),
+    TopLeft(0, 1, -90f),
     TopRight(2, 1, 90f),
     Middle(1, 2, 0f),
-    BottomLeft(0, 3, 90f),
+    BottomLeft(0, 3, -90f),
     BottomRight(2, 3, 90f),
-    Bottom(1, 4, 0f),
+    Bottom(1, 4, 180f),
     // garage positions
     GarageTopLeft(-2, -3, 45f),
     GarageTopCenter(1, -3, 0f),
