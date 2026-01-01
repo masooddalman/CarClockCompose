@@ -102,6 +102,7 @@ fun Car(path: PathDefinition, delay: Long = 300) {
 
     val initialPosition = segmentDetailsMap.getValue(path.start).position
     var currentPos by remember { mutableStateOf(initialPosition) }
+    var lastKnownRotation by remember(carIndex) { mutableStateOf(path.start.rotation) }
     var currentRotation by remember { mutableStateOf(path.start.rotation) }
     val progress = remember { Animatable(0f) }
 
@@ -114,7 +115,11 @@ fun Car(path: PathDefinition, delay: Long = 300) {
         // If start and end are the same, snap to the position and do nothing.
         if (startPosition == endPosition) {
             currentPos = endPosition
-            currentRotation = path.end.rotation
+            // avoid unwanted rotation when car is not moving
+            if(currentRotation == 45f || currentRotation == -45f)
+                currentRotation = path.start.rotation
+            else
+                currentRotation = lastKnownRotation
             progress.snapTo(1f) // Mark as "done"
             return@LaunchedEffect
         }
@@ -137,10 +142,12 @@ fun Car(path: PathDefinition, delay: Long = 300) {
             val tangent = getBezierTangent(value, startPosition, controlPoint1, controlPoint2, endPosition)
             if (tangent.getDistanceSquared() > 0) {
                 currentRotation = Math.toDegrees(atan2(tangent.y, tangent.x).toDouble()).toFloat()
+                lastKnownRotation = currentRotation
             }
         }
         currentPos = endPosition
-        currentRotation = path.end.rotation
+        // avoid unwanted rotation at end
+        // currentRotation = path.end.rotation
     }
 
     Box(
