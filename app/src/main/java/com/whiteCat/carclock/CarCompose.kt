@@ -1,3 +1,4 @@
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -102,9 +104,13 @@ fun Car(path: PathDefinition, delay: Long = 300) {
 
     val initialPosition = segmentDetailsMap.getValue(path.start).position
     var currentPos by remember { mutableStateOf(initialPosition) }
-    var lastKnownRotation by remember(carIndex) { mutableStateOf(path.start.rotation) }
+    var lastKnownRotation by remember(carIndex) { mutableFloatStateOf(-1f) }
     var currentRotation by remember { mutableStateOf(path.start.rotation) }
     val progress = remember { Animatable(0f) }
+
+    LaunchedEffect(currentRotation) {
+        Log.v("car${carIndex}"," currentRotation : ${currentRotation}")
+    }
 
     LaunchedEffect(path) {
         val startDetails = segmentDetailsMap.getValue(path.start)
@@ -115,11 +121,17 @@ fun Car(path: PathDefinition, delay: Long = 300) {
         // If start and end are the same, snap to the position and do nothing.
         if (startPosition == endPosition) {
             currentPos = endPosition
+            Log.v("car${carIndex}","start == end > pathEnd:${path.end.rotation} - currentRotation:${currentRotation} - lastKnownRotation : ${lastKnownRotation}")
             // avoid unwanted rotation when car is not moving
             if(currentRotation == 45f || currentRotation == -45f)
-                currentRotation = path.start.rotation
-            else
-                currentRotation = lastKnownRotation
+                currentRotation = path.end.rotation
+            else {
+                if (lastKnownRotation == -1f) {
+                    currentRotation = path.end.rotation
+                } else {
+                    currentRotation = lastKnownRotation
+                }
+            }
             progress.snapTo(1f) // Mark as "done"
             return@LaunchedEffect
         }
@@ -142,12 +154,13 @@ fun Car(path: PathDefinition, delay: Long = 300) {
             val tangent = getBezierTangent(value, startPosition, controlPoint1, controlPoint2, endPosition)
             if (tangent.getDistanceSquared() > 0) {
                 currentRotation = Math.toDegrees(atan2(tangent.y, tangent.x).toDouble()).toFloat()
-                lastKnownRotation = currentRotation
+
             }
         }
         currentPos = endPosition
         // avoid unwanted rotation at end
         // currentRotation = path.end.rotation
+        lastKnownRotation = currentRotation
     }
 
     Box(
@@ -160,7 +173,8 @@ fun Car(path: PathDefinition, delay: Long = 300) {
     ) {
         Image(
             painter = painterResource(id = R.drawable.car_white1),
-            modifier = Modifier.width(75.dp)
+            modifier = Modifier
+                .width(75.dp)
                 .aspectRatio(1f),
             contentDescription = "car${carIndex}"
         )
