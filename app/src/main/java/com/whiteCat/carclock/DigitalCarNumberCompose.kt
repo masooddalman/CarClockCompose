@@ -4,6 +4,7 @@ import Car
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,12 +29,12 @@ enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
     BottomRight(2, 3, 90f),
     Bottom(1, 4, 180f),
     // garage positions
-    GarageTopLeft(-2, -3, 45f),
-    GarageTopCenter(1, -3, 0f),
-    GarageTopRight(4, -3, -45f),
-    GarageBottomLeft(-2, 8, -45f),
-    GarageBottomCenter(1, 8, 0f),
-    GarageBottomRight(4, 8, 45f)
+    GarageTopLeft(-2, -10, 45f),
+    GarageTopCenter(1, -10, 0f),
+    GarageTopRight(4, -10, -45f),
+    GarageBottomLeft(-2, 15, -45f),
+    GarageBottomCenter(1, 15, 0f),
+    GarageBottomRight(4, 15, 45f)
 }
 
 // if manual config missing, generate default paths
