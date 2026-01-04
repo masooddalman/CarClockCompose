@@ -23,6 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.whiteCat.carclock.PathDefinition
 import com.whiteCat.carclock.R
+import com.whiteCat.carclock.RotationState
 import com.whiteCat.carclock.SegmentPosition
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -104,13 +105,8 @@ fun Car(path: PathDefinition, delay: Long = 300) {
 
     val initialPosition = segmentDetailsMap.getValue(path.start).position
     var currentPos by remember { mutableStateOf(initialPosition) }
-    var lastKnownRotation by remember(carIndex) { mutableFloatStateOf(-1f) }
-    var currentRotation by remember { mutableStateOf(path.start.rotation) }
+    var currentRotation by remember { mutableStateOf(RotationState.getRotation(carIndex)) }
     val progress = remember { Animatable(0f) }
-
-    LaunchedEffect(currentRotation) {
-        Log.v("car${carIndex}"," currentRotation : ${currentRotation}")
-    }
 
     LaunchedEffect(path) {
         val startDetails = segmentDetailsMap.getValue(path.start)
@@ -121,17 +117,8 @@ fun Car(path: PathDefinition, delay: Long = 300) {
         // If start and end are the same, snap to the position and do nothing.
         if (startPosition == endPosition) {
             currentPos = endPosition
-            Log.v("car${carIndex}","start == end > pathEnd:${path.end.rotation} - currentRotation:${currentRotation} - lastKnownRotation : ${lastKnownRotation}")
-            // avoid unwanted rotation when car is not moving
-            if(currentRotation == 45f || currentRotation == -45f)
-                currentRotation = path.end.rotation
-            else {
-                if (lastKnownRotation == -1f) {
-                    currentRotation = path.end.rotation
-                } else {
-                    currentRotation = lastKnownRotation
-                }
-            }
+            Log.v("car${carIndex}","start == end > pathEnd:${path.end.rotation} - currentRotation:${currentRotation} - lastKnownRotation : ${RotationState.getRotation(carIndex)}")
+            currentRotation = RotationState.getRotation(carIndex)
             progress.snapTo(1f) // Mark as "done"
             return@LaunchedEffect
         }
@@ -158,9 +145,7 @@ fun Car(path: PathDefinition, delay: Long = 300) {
             }
         }
         currentPos = endPosition
-        // avoid unwanted rotation at end
-        // currentRotation = path.end.rotation
-        lastKnownRotation = currentRotation
+        RotationState.updateRotation(carIndex,currentRotation)
     }
 
     Box(
