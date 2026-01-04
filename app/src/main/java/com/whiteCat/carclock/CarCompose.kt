@@ -6,12 +6,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -20,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.whiteCat.carclock.PathDefinition
 import com.whiteCat.carclock.R
@@ -81,8 +80,11 @@ private data class SegmentDetails(val position: Offset, val controlPoint: Offset
 
 
 @Composable
-fun Car(path: PathDefinition, delay: Long = 300) {
-    val gridSize = 50f
+fun Car(path: PathDefinition,
+        delay: Long = 300,
+        gridSize: Float = 50f,
+        carSize: Dp = 75.dp,
+        margin: Dp = 10.dp) {
     val carIndex = path.carIndex
 
     val controlPointDistance = remember(carIndex) {
@@ -150,16 +152,16 @@ fun Car(path: PathDefinition, delay: Long = 300) {
 
     Box(
         modifier = Modifier
-            .offset(x = currentPos.x.dp + 10.dp, y = currentPos.y.dp + 10.dp)
+            .offset(x = currentPos.x.dp + margin, y = currentPos.y.dp + margin)
             .rotate(currentRotation)
-            .size(width = 75.dp, height = 30.dp),
+            .width(carSize),
 //            .background(Color.Red, RoundedCornerShape(4.dp)),
         contentAlignment = Alignment.Center
     ) {
         Image(
             painter = painterResource(id = R.drawable.car_white1),
             modifier = Modifier
-                .width(75.dp)
+                .width(carSize)
                 .aspectRatio(1f),
             contentDescription = "car${carIndex}"
         )
