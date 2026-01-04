@@ -25,6 +25,9 @@ class TransitionConfig {
 
 
 
+    val animationDuration = 7000
+    val staggerDelay = 1500L
+
     /**
      * A map that defines the transition configurations between different clock digit layouts.
      *

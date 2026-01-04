@@ -134,7 +134,7 @@ fun Car(path: PathDefinition,
         progress.animateTo(
             1f,
             tween(
-                durationMillis = 3000,
+                durationMillis = TransitionConfig.getInstance().animationDuration,
                 easing = FastOutSlowInEasing,
                 delayMillis = delay.toInt()
             )

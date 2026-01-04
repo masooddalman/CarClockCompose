@@ -136,7 +136,6 @@ fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
     }
 
     var previousNumber by remember { mutableStateOf(0) } // Assuming start from 0
-    val staggerDelay = 500L // Delay in ms between each car starting
 
     LaunchedEffect(number) {
         // Requirement 1 & 2: Check for a manual config first.
@@ -159,7 +158,7 @@ fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
             carPaths.forEachIndexed { index, path ->
                 Car(
                     path = path,
-                    delay = index * staggerDelay,
+                    delay = index * TransitionConfig.getInstance().staggerDelay,
                     gridSize = responsiveGridSize,
                     carSize = responsiveCarSize,
                     margin = responsiveMargin
