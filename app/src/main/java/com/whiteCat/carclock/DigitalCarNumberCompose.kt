@@ -150,7 +150,8 @@ fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .width(180.dp),
+            .width(180.dp)
+            .padding(top = 16.dp),
 //            .background(Color.Black.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center
     ) {

@@ -24,6 +24,7 @@ import com.whiteCat.carclock.PathDefinition
 import com.whiteCat.carclock.R
 import com.whiteCat.carclock.RotationState
 import com.whiteCat.carclock.SegmentPosition
+import com.whiteCat.carclock.TransitionConfig
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
