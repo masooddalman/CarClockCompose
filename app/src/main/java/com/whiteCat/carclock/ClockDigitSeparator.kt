@@ -22,7 +22,7 @@ fun ClockDigitSeparator(onNext: (() -> Unit)? = null, onPrevious: (() -> Unit)? 
     ) {
         Image(
             painter = painterResource(id = R.drawable.cone),
-            modifier = Modifier.width(75.dp)
+            modifier = Modifier.width(25.dp)
                 .aspectRatio(1f)
                 .clickable(
                     enabled = onNext != null,
@@ -35,7 +35,7 @@ fun ClockDigitSeparator(onNext: (() -> Unit)? = null, onPrevious: (() -> Unit)? 
 
         Image(
             painter = painterResource(id = R.drawable.cone),
-            modifier = Modifier.width(75.dp)
+            modifier = Modifier.width(25.dp)
                 .aspectRatio(1f).rotate(180f)
                 .clickable(
                     enabled = onPrevious != null,
