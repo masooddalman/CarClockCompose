@@ -19,23 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
-// static segment positions of a digit number
-enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
-    Top(1, 0, 0f),
-    TopLeft(0, 1, -90f),
-    TopRight(2, 1, 90f),
-    Middle(1, 2, 0f),
-    BottomLeft(0, 3, -90f),
-    BottomRight(2, 3, 90f),
-    Bottom(1, 4, 180f),
-    // garage positions
-    GarageTopLeft(-2, -10, 45f),
-    GarageTopCenter(1, -10, 0f),
-    GarageTopRight(4, -10, -45f),
-    GarageBottomLeft(-2, 15, -45f),
-    GarageBottomCenter(1, 15, 0f),
-    GarageBottomRight(4, 15, 45f)
-}
+
 
 // if manual config missing, generate default paths
 fun generateDefaultPaths(fromDigit: Int, toDigit: Int): List<PathDefinition> {

@@ -1,6 +1,13 @@
 package com.whiteCat.carclock
 
-data class PathDefinition(
+import androidx.compose.ui.geometry.Offset
+import com.whiteCat.carclock.SegmentPosition.Companion.FaceDown
+import com.whiteCat.carclock.SegmentPosition.Companion.FaceLeft
+import com.whiteCat.carclock.SegmentPosition.Companion.FaceRight
+import com.whiteCat.carclock.SegmentPosition.Companion.FaceUp
+
+
+data class PathDefinition (
     val carIndex: Int,
     val start: SegmentPosition,
     val end: SegmentPosition
