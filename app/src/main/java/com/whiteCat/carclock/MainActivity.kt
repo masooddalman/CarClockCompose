@@ -8,6 +8,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutBounce
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -43,62 +44,64 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         setContent {
             CarClockTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
-
-                    val debugMode by remember { mutableStateOf(false) }
-
-                    var hourTens by remember { mutableIntStateOf(0) }
-                    var hourUnits by remember { mutableIntStateOf(0) }
-                    var minuteTens by remember { mutableIntStateOf(0) }
-                    var minuteUnits by remember { mutableIntStateOf(0) }
-                    val secondProgress = remember { Animatable(0f) }
-
-                    val path = remember { Path() }
-                    val pathMeasure = remember { PathMeasure() }
-
-                    val secondHandleWidth = 5.dp
-                    val secondHandleCornerRadius = 48.dp
-
-                    LaunchedEffect(Unit) {
-
-                        if(!debugMode) {
-                            calculateClock(
-                                hour = { hourTensString ->
-                                    hourTens = hourTensString[0].digitToInt()
-                                    hourUnits = hourTensString[1].digitToInt()
-                                },
-                                minute = { minuteTensString ->
-                                    minuteTens = minuteTensString[0].digitToInt()
-                                    minuteUnits = minuteTensString[1].digitToInt()
-                                },
-                                second = { secondString ->
-                                    val currentSecond = secondString.toFloat()
-                                    val targetAngle = currentSecond / 60f
-                                    secondProgress.animateTo(
-                                        targetValue = targetAngle,
-                                        animationSpec = tween(
-                                            durationMillis = 600, // Animate over 1 second
-                                            easing = EaseOutBounce
-                                        )
-                                    )
-                                }
-                            )
-                        }
-                    }
-                    Box(
+                Box(contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = painterResource(id = R.drawable.asphalt),
+                        contentDescription = "Asphalt background",
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ){
+                        contentScale = ContentScale.FillBounds // Use Crop to fill without distortion
+                    )
+                    Scaffold(
+                        containerColor = Color.Transparent,
+                        modifier = Modifier.fillMaxSize()
+                            .background(color = Color.Transparent),
 
-                        Image(
-                            painter = painterResource(id = R.drawable.asphalt),
-                            contentDescription = "Asphalt background",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.FillBounds // Use Crop to fill without distortion
-                        )
+                        ) { _ ->
+
+                        val debugMode by remember { mutableStateOf(false) }
+
+                        var hourTens by remember { mutableIntStateOf(0) }
+                        var hourUnits by remember { mutableIntStateOf(0) }
+                        var minuteTens by remember { mutableIntStateOf(0) }
+                        var minuteUnits by remember { mutableIntStateOf(0) }
+                        val secondProgress = remember { Animatable(0f) }
+
+                        val path = remember { Path() }
+                        val pathMeasure = remember { PathMeasure() }
+
+                        val secondHandleWidth = 5.dp
+                        val secondHandleCornerRadius = 48.dp
+
+                        LaunchedEffect(Unit) {
+
+                            if (!debugMode) {
+                                calculateClock(
+                                    hour = { hourTensString ->
+                                        hourTens = hourTensString[0].digitToInt()
+                                        hourUnits = hourTensString[1].digitToInt()
+                                    },
+                                    minute = { minuteTensString ->
+                                        minuteTens = minuteTensString[0].digitToInt()
+                                        minuteUnits = minuteTensString[1].digitToInt()
+                                    },
+                                    second = { secondString ->
+                                        val currentSecond = secondString.toFloat()
+                                        val targetAngle = currentSecond / 60f
+                                        secondProgress.animateTo(
+                                            targetValue = targetAngle,
+                                            animationSpec = tween(
+                                                durationMillis = 600, // Animate over 1 second
+                                                easing = EaseOutBounce
+                                            )
+                                        )
+                                    }
+                                )
+                            }
+                        }
 
                         Box(
                             modifier = Modifier
@@ -145,7 +148,8 @@ class MainActivity : ComponentActivity() {
                                     } else null,
                                     onPrevious = if (debugMode) {
                                         {
-                                            val previousValue = if (minuteUnits == 0) 9 else minuteUnits - 1
+                                            val previousValue =
+                                                if (minuteUnits == 0) 9 else minuteUnits - 1
                                             minuteUnits = previousValue
                                         }
                                     } else null

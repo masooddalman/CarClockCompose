@@ -1,12 +1,11 @@
 package com.whiteCat.carclock
 
 import Car
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,28 +14,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
-// static segment positions of a digit number
-enum class SegmentPosition(val x: Int, val y: Int, val rotation: Float) {
-    Top(1, 0, 0f),
-    TopLeft(0, 1, 90f),
-    TopRight(2, 1, 90f),
-    Middle(1, 2, 0f),
-    BottomLeft(0, 3, 90f),
-    BottomRight(2, 3, 90f),
-    Bottom(1, 4, 0f),
-    // garage positions
-    GarageTopLeft(-2, -3, 45f),
-    GarageTopCenter(1, -3, 0f),
-    GarageTopRight(4, -3, -45f),
-    GarageBottomLeft(-2, 8, -45f),
-    GarageBottomCenter(1, 8, 0f),
-    GarageBottomRight(4, 8, 45f)
-}
+
 
 // if manual config missing, generate default paths
 fun generateDefaultPaths(fromDigit: Int, toDigit: Int): List<PathDefinition> {
@@ -114,6 +97,15 @@ val digitMap = mapOf(
 
 @Composable
 fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
+
+    val configuration = LocalConfiguration.current
+    val digitalCarNumberWidth = configuration.screenWidthDp.dp / 5f
+
+    val responsiveGridSize = (digitalCarNumberWidth.value / 4.5f)
+    val responsiveCarSize = (responsiveGridSize * 1.5f).dp
+    val responsiveMargin = (responsiveGridSize * 0.2f).dp
+
+
     var carPaths by remember {
         mutableStateOf(List(7) { i ->
             val initialGarage = when(i) {
@@ -129,7 +121,6 @@ fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
     }
 
     var previousNumber by remember { mutableStateOf(0) } // Assuming start from 0
-    val staggerDelay = 500L // Delay in ms between each car starting
 
     LaunchedEffect(number) {
         // Requirement 1 & 2: Check for a manual config first.
@@ -143,7 +134,8 @@ fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .width(180.dp),
+            .width(180.dp)
+            .padding(top = 16.dp),
 //            .background(Color.Black.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center
     ) {
@@ -152,7 +144,10 @@ fun DigitalCarNumber(number: Int, modifier: Modifier = Modifier) {
             carPaths.forEachIndexed { index, path ->
                 Car(
                     path = path,
-                    delay = index * staggerDelay
+                    delay = index * TransitionConfig.getInstance().staggerDelay,
+                    gridSize = responsiveGridSize,
+                    carSize = responsiveCarSize,
+                    margin = responsiveMargin
                 )
             }
         }
