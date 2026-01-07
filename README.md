@@ -9,9 +9,15 @@ A unique, highly customizable digital clock for Android where animated cars form
   <img src="gitAssets/banner.jpg" alt="Car Clock Banner">
 </p>
 
+---
+## Demo Video
+https://github.com/user-attachments/assets/4fd8925f-c916-4c69-bf26-9139cca59a8f
+
 ## Overview
 
-This application is a creative exploration of advanced animation in Jetpack Compose. It transforms a standard digital display into a dynamic scene where cars drive along smooth, configurable Bézier curve paths to form numbers. The project showcases a clean separation of logic and UI, a responsive layout system, and a powerful, centralized configuration for complex animations.
+This application is a creative exploration of advanced animation in Jetpack Compose. The inspiration came from a fascinating real-world art installation, the [Škoda "Clock made of Cars"](https://www.youtube.com/watch?v=yMzfX3kUe4U). In the original clock, the numbers are formed by playing video clips of actual cars and people moving into position. I thought, "What if this could be recreated entirely with code?"
+
+This project is the result of that idea. It transforms a standard digital display into a dynamic scene where cars drive along smooth, configurable Bézier curve paths to form numbers. It showcases a clean separation of logic and UI, a responsive layout system, and a powerful, centralized configuration for complex animations, all built from the ground up.
 
 ## Features
 
